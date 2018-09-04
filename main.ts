@@ -86,6 +86,10 @@ namespace procedural {
             }
         }
 
+        getColors() {
+            return this.colors;
+        }
+
         saveImage(input: Image): void {
             let output = "img`\n";
             for (let row = 0; row < input.height; row++) {

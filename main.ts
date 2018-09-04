@@ -122,6 +122,10 @@ namespace procedural {
         }
     }
 
+    export function createSpriteGenerator() {
+        return new SpriteGenerator();
+    }
+
     function copyOver(x: number,
         y: number,
         precedence: number,

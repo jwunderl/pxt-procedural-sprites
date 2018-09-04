@@ -16,22 +16,21 @@ namespace procedural {
             }
         }
 
-        generate(input: Image, usePrevious?: boolean): Image {
+        generate(input: Image, swapColors?: boolean, usePrevious?: boolean): Image {
             let precedenceMap = input.clone();
             precedenceMap.fill(0);
             let output = precedenceMap.clone();
 
             let chosen: Image[] = [];
             if (usePrevious && this.previous) {
-                for (let color = 0; color < chosen.length; color++) {
+                chosen = this.previous
+            } else {
+                for (let color = 0; color < this.parts.length; color++) {
                     if (this.parts[color]) {
                         chosen[color] = Math.pickRandom(this.parts[color]);
                     }
                 }
-            } else {
-                chosen = this.previous;
             }
-
             this.previous = chosen;
 
             for (let i = 0; i < input.width; i++) {
@@ -48,20 +47,12 @@ namespace procedural {
                     }
                 }
             }
-            return output;
+
+            if (swapColors) return this.colorSwap(output);
+            else return output;
         }
 
-        colorSwap(input: Image, colors?: number[]): Image {
-            if (!colors || colors.length != 16) {
-                // shuffle 1-14; leave black and clear as is
-                colors = [];
-                for (let i = 1; i < 0xf; ++i) {
-                    colors.push(i);
-                }
-                shuffle(colors);
-                colors.insertAt(0, 0x0);
-                colors.push(0xf);
-            }
+        colorSwap(input: Image): Image {
             let outImage = input.clone();
             for (let i = 0; i < outImage.width; i++) {
                 for (let j = 0; j < outImage.height; j++) {
@@ -71,7 +62,7 @@ namespace procedural {
             return outImage;
         }
 
-        setColors(colors?: number[]) {
+        setColors(colors?: number[]): void {
             if (!colors || colors.length != 16) {
                 // shuffle 1-14; leave black and clear as is
                 this.colors = [];
@@ -86,23 +77,8 @@ namespace procedural {
             }
         }
 
-        getColors() {
+        getColors(): number[] {
             return this.colors;
-        }
-
-        saveImage(input: Image): void {
-            let output = "img`\n";
-            for (let row = 0; row < input.height; row++) {
-                for (let col = 0; col < input.width; col++) {
-                    let val = input.getPixel(col, row);
-                    output += ((val < 0xa) ?
-                        val + ""
-                        : "ABCDEF".charAt(val % 10))
-                        + " ";
-                }
-                output += "\n";
-            }
-            console.log(output + "`");
         }
 
         addPart(color: number, part: Image): void {
@@ -117,13 +93,27 @@ namespace procedural {
             for (let part of parts) {
                 if (!part) return;
             }
-
             this.parts[color] = parts;
         }
     }
 
-    export function createSpriteGenerator() {
+    export function createSpriteGenerator(): SpriteGenerator {
         return new SpriteGenerator();
+    }
+
+    export function saveImage(input: Image): void {
+        let output = "img`\n";
+        for (let row = 0; row < input.height; row++) {
+            for (let col = 0; col < input.width; col++) {
+                let val = input.getPixel(col, row);
+                output += ((val < 0xa) ?
+                    val + ""
+                    : "ABCDEF".charAt(val % 10))
+                    + " ";
+            }
+            output += "\n";
+        }
+        console.log(output + "`");
     }
 
     function copyOver(x: number,
@@ -131,7 +121,7 @@ namespace procedural {
         precedence: number,
         target: Image,
         toCopy: Image,
-        precedenceMap: Image) {
+        precedenceMap: Image): void {
         x -= toCopy.width / 2
         y -= toCopy.height / 2;
         for (let i = 0; i < toCopy.width; i++) {
